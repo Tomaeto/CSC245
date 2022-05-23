@@ -1,0 +1,29 @@
+Adrian Faircloth
+
+				Project 2: Binary Expression Tree
+
+Problem:
+	 Program a binary expression tree that will print an expression in prefix, infix, and postfix formats.
+Program must built a BET from an expression in any of the three formats, and allow the user to choose which to enter.
+Program must prompt user to either input another expression to build another tree or exit the program.
+
+Algorithm:
+	- To convert an infix expression to postfix, I stored operators in a stack and
+	 applied the following algorithm to all characters from left to right:
+		- output operands
+		- For an operator, pop all operators of higher or equal precedence, then push operator onto stack
+		- If a ')' is found, pop all operators until '(' is found, then pop '('
+		- pop all remaining symbols
+
+	- The insertOperand function creates a new BinaryNode, sets its info to indicate it is an operand, and
+	 sets its variable value to the operand's value. Since all operands in a BET are leaf nodes, the function
+	 sets the node's left and right links to NULL and pushes its pointer onto the stack.
+
+	- The insertPostfixOperator function creates a new BinaryNode, sets its info to indicate it is an operator,
+	 and sets its opsymbol value to the operator's symbol. The function then pops the last two pointers on the stack,
+	 sets the first as the node's right child and the second as the node's left child, and pushes the node onto the stack.
+	
+	- The insertPrefixOperator function creates a new BinaryNode, sets its info to indicate it is an operator,
+	 and sets its opsymbol value to the operator's symbol. Since the prefix expression is parsed from right to left rather
+	 than left to right like a postfix expression, the function pops the last two pointers on the stack, sets the first
+	 as the node's left child and the second as the node's right child, and pushes the node onto the stack.

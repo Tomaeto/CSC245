@@ -1,0 +1,360 @@
+Script started on Wed 10 Nov 2021 08:41:03 PM EST
+]0;faircloth_as@cobra:~/csc245/Proj3[?1034h[faircloth_as@cobra Proj3]$ cat =[K-n nup[K[K[Kzip.cpp
+     1	#include "huffman.h"
+     2	#include <iostream>
+     3	#include <fstream>
+     4	#include <cstring>
+     5	//Program for compressing a file using Huffman encoding
+     6	//Takes arguments from command line, if arg is --help, displays help menu,
+     7	//if arg is --t filename, displays Huffman table for input file,
+     8	//if arg is filename, compresses file into filename.zip, otherwise
+     9	//prints error message and exits
+    10	
+    11	//Output file has format:
+    12	//	numChars
+    13	//	ASCIIval HuffmanCode
+    14	//	encodedString
+    15		
+    16	//By Adrian Faircloth
+    17	//CSC245
+    18	//11-10-21
+    19	
+    20	//Function declarations
+    21	void InsertChars(int Letters[], HuffmanTree& tree, int& numChars);
+    22	
+    23	int main(int argc, char *argv[])
+    24	{
+    25		HuffmanTree tree;
+    26		int Letters[256];
+    27		int numChars = 0;
+    28		string filename;
+    29		//If the first argument is --t, stores second arg as filename
+    30		//Otherwise stores first arg as filename
+    31		if (!strcmp(argv[1], "--t"))
+    32			filename = argv[2];
+    33		else
+    34			filename = argv[1];
+    35		ifstream file(filename);
+    36		//If first arg is --help, displays help menu
+    37		if (!strcmp(argv[1], "--help") )
+    38		{
+    39			cout << "Compress a text file with Huffman encoding." << endl << endl;
+    40			cout << "--t\t\tDisplay Huffman encoding table" << endl;
+    41			cout << "--help\t\tDisplay help menu" << endl;
+    42		}
+    43		//If filename is invalid, prints error message and exits	
+    44		else if (!file.is_open())
+    45		{
+    46			cout << "Bad Filename entered on command line" << endl;
+    47		}
+    48		//Otherwise, either compresses file into a .zip or prints Huffman table
+    49		else
+    50		{
+    51			//Getting frequency of each char in file as well as
+    52			//	number of unique characters
+    53			char ch;
+    54			for (char c = char(0); c <= char(126); c++)
+    55			{
+    56				Letters[c] = 0;
+    57			}
+    58		
+    59			string filestring = "";
+    60			while (file.get(ch))
+    61			{
+    62				Letters[ch]++;
+    63				filestring += ch;
+    64			}
+    65			//Inserting each char into the tree w/ weights and building tree
+    66			InsertChars(Letters, tree, numChars);
+    67			tree.build();
+    68			//If first arg is --t, prints Huffman table and exits
+    69			if (!strcmp(argv[1], "--t"))
+    70			{
+    71				cout <<	"\t#ENCODING TABLE FOR ZIP FILE#" << endl;
+    72				cout << "Index\tChar\tWeight\tParent\tChildType" << endl;
+    73				tree.PrintTable();
+    74			}
+    75			//Otherwise, compresses file into .zip
+    76			else
+    77			{
+    78				//Creating output file and deleting input file
+    79				ofstream outfile;
+    80				remove(argv[1]);
+    81	       			filename = filename + ".zip";
+    82	       			string codedStr = "";
+    83	       			outfile.open(filename);
+    84				//Putting number of unique chars as header of output file
+    85	       			outfile << numChars;
+    86	       			outfile << "\n";
+    87	       			for (char c = char(0); c <= char(126); c++)
+    88	       			{
+    89					//For each char present in file, puts is ASCII
+    90					//	value and Huffman code into output file
+    91	       	       		 	if (Letters[c] > 0)
+    92	       	        		{
+    93	       	                		outfile << (int)(c);
+    94	       	                		outfile << " ";
+    95	       	                		outfile << tree.GetCode(c);
+    96	       	                		outfile << "\n";
+    97	       		       	 	}
+    98	       			}
+    99				//For each character from input file, puts Huffman
+   100				//	code into last line of output file
+   101				for (int i = 0; i < filestring.length(); i++)
+   102				{
+   103					codedStr += tree.GetCode(filestring[i]);
+   104				}
+   105				outfile << codedStr;
+   106				//Closing completed output file and printing exit message
+   107				outfile.close();
+   108				cout << "File successfully compressed" << endl;
+   109			}
+   110		}
+   111		
+   112		
+   113	}
+   114	
+   115	
+   116	
+   117	
+   118	void InsertChars(int Letters[], HuffmanTree& tree, int& numChars)
+   119	{
+   120		//Inserts each char w/ weight > 0 into Huffman tree and
+   121		//	increments num of unique chars
+   122		for (char c = char(0); c <= char(126); c++)
+   123		{
+   124			if (Letters[c] > 0)
+   125			{
+   126				tree.insert(c, Letters[c]);
+   127				numChars++;
+   128			}
+   129		}
+   130	}
+]0;faircloth_as@cobra:~/csc245/Proj3[faircloth_as@cobra Proj3]$ cat huffman.h
+#include <vector>
+#include <string>
+using namespace std;
+
+struct HNode {
+    char ch;
+    int weight;
+    int parent;
+    int childType;
+};
+
+class HuffmanTree {
+    public:
+	HuffmanTree();				// constructor
+
+	void insert(char ch, int weight);	// inserts a character and its associated weight
+						// into a node of the Huffman tree
+
+	bool inTree(char ch);			// returns a boolean value indicating whether
+						// a given character is stored in the tree
+		
+	int GetFrequency(char ch);		// returns the weight of a given character
+
+	
+	void build();				// Builds the Huffman Tree;
+	
+
+	string GetCode(char ch);		// returns the compressed code of a given
+						// character in the tree using recursion
+
+	void PrintTable();			// displays the Huffman encoding table used in
+						// the compression process
+	
+	int numNodes();				// returns the number of nodes currently in Huffman 
+						// tree
+
+    private:
+	vector<HNode> nodes;
+	int numChars;
+	bool built;                             
+	
+	int lookUp(char ch);			// returns the index of a given character in tree
+	int GetFrequency(int i);		// returns the weight at a given index
+	string GetCode(int i);			// returns the compressed code of the character at 
+						// a given index
+
+	void getSmallestFreq(int& i);		// returns frequency of node w/ smallest weight and no parent 
+	void mergeNodes(HNode temp1, HNode temp2); // creates total node from 2 character nodes and inserts
+						   // into tree
+	int findNode(HNode& node, int smallFreq); // finds node w/ smallest frequency & no parent, sets parameter node to
+					          // that node and returns index
+};
+]0;faircloth_as@cobra:~/csc245/Proj3[faircloth_as@cobra Proj3]$ a[Kcat huffman.cpp
+#include "huffman.h"
+#include <iostream>
+using namespace std;
+
+HuffmanTree:: HuffmanTree()
+	: numChars(0), built(false) {}
+
+void HuffmanTree:: insert(char ch, int weight) {
+    HNode newNode = {ch, weight, -1, -1}; 
+    built = false;
+    nodes.push_back(newNode);
+    numChars++;
+
+}
+
+bool HuffmanTree:: inTree(char ch) {
+	//Returns bool indicating if given character
+	//	is in tree	
+	int index = lookUp(ch);
+	if (index == -1)
+		return false;
+	else
+		return true;
+}
+
+int HuffmanTree:: GetFrequency(char ch) {
+	//Returns weight of given character in tree
+	//Calls method w/ index of desired character
+	return GetFrequency(lookUp(ch));
+}
+
+int HuffmanTree:: GetFrequency(int i) {
+	//Returns weight of given character in tree
+	return nodes[i].weight;
+}
+
+int HuffmanTree:: lookUp(char ch) {
+	//Returns index of given character in the tree
+	//If char is not in tree, returns -1
+	int index = -1;
+	for (int i = 0; i < nodes.size(); i++)
+	{
+		if (nodes[i].ch == ch)
+			index = i;
+	}
+	return index;	
+}
+
+string HuffmanTree:: GetCode(char ch) {
+	//Calls method w/ index of wanted character
+	//Returns binary representation of character
+	return GetCode(lookUp(ch));
+}
+
+
+string HuffmanTree:: GetCode(int i) {
+	//Returns binary representation of a given character
+	if (nodes[i].parent == -1)
+		return "";
+	else
+		return (GetCode(nodes[i].parent) + 
+			(char) (nodes[i].childType + '0'));
+}
+
+void HuffmanTree:: PrintTable() {
+	//Prints out index, char, weight, parent, and childType of all nodes in vector
+	//For newline, space, and merged nodes, prints string representing that char
+	int numMerged = 1;
+	for (int i = 0; i < numNodes(); i++)
+	{
+		if (nodes[i].ch == '\n')
+			cout << i << "\tnl\t";
+
+		else if (nodes[i].ch == ' ')
+			cout << i << "\tsp\t";
+		
+		else if (nodes[i].ch == '\0')
+		{
+			cout << i << "\tT" << numMerged << "\t";
+			numMerged++;
+		}
+		else
+			cout << i << "\t" << nodes[i].ch << "\t";
+
+		cout << nodes[i].weight << "\t" << nodes[i].parent << "\t"
+		     << nodes[i].childType << endl;
+	}
+}
+
+int HuffmanTree:: numNodes() {
+	//Returns the number of nodes in the tree
+	return nodes.size();
+}
+
+void HuffmanTree:: build() {
+	//Builds Huffman Tree	
+	int smallFreq;
+	int nodeIndex;
+	int numUnique = numChars;
+	getSmallestFreq(smallFreq);
+	HNode temp1;
+	temp1.weight = -1;
+	HNode temp2 = temp1;
+	//Creates and inserts merged nodes into vector until
+	//	vector has correct number of nodes
+	//All full Huffman tables contain 2C -1 nodes, where
+	//	C is the number of unique characters
+	while (numNodes() < (2*numUnique) - 1)
+	{
+		//Finds next node w/ smallest weight and no parent,
+		//	sets first temp node to that node and sets
+		//	the parent and childType of that node in the vector
+		//Sets parent to numNodes since the index of the next inserted
+		//node will be equal to current size of vector
+		//First node found gets childType of 0
+		nodeIndex = findNode(temp1, smallFreq);
+		nodes[nodeIndex].parent = numNodes();
+		nodes[nodeIndex].childType = 0;
+		//Resetting smallFreq and getting next node, setting that node's params
+		//Second node found gets childType of 1
+		getSmallestFreq(smallFreq);
+		nodeIndex = findNode(temp2, smallFreq);
+		nodes[nodeIndex].parent = numNodes();
+		nodes[nodeIndex].childType = 1;
+		getSmallestFreq(smallFreq);
+		//Merging nodes and resetting temp nodes for next run
+		mergeNodes(temp1, temp2);
+		temp1.weight = -1;
+		temp2.weight = -1;
+	}	
+}
+
+void HuffmanTree:: getSmallestFreq(int& smallFreq) {
+	//Returns weight of node w/ smallest weight and no parent
+	smallFreq = 1000;
+	for (int i = 0; i < numNodes(); i++)
+	{
+		if (nodes[i].weight < smallFreq && nodes[i].parent == -1)
+			smallFreq = nodes[i].weight;
+	}
+}
+
+void HuffmanTree:: mergeNodes(HNode temp1, HNode temp2) {
+	//Merges two nodes and inserts merged node into tree
+	int mergeWeight = temp1.weight + temp2.weight;
+	insert('\0', mergeWeight);
+}
+
+int HuffmanTree:: findNode(HNode& node, int smallFreq) {
+	//Finds a node with the smallest frequency and no parent
+	//Sets temp node to that node and returns index
+	int index = -1;
+	for (int i = 0; i < numNodes(); i++)
+	{
+		if (nodes[i].weight == smallFreq && nodes[i].parent == -1 && node.weight == -1)
+		{
+			node = nodes[i];
+			index = i;
+		}
+	}
+	return index;
+}
+]0;faircloth_as@cobra:~/csc245/Proj3[faircloth_as@cobra Proj3]$ c++ zip.cpp huffman.o
+]0;faircloth_as@cobra:~/csc245/Proj3[faircloth_as@cobra Proj3]$ mv a,[K.out myZip
+]0;faircloth_as@cobra:~/csc245/Proj3[faircloth_as@cobra Proj3]$ c++ unzip.cpp
+]0;faircloth_as@cobra:~/csc245/Proj3[faircloth_as@cobra Proj3]$ ,v [K[K[Kmv a.out myUnzip
+]0;faircloth_as@cobra:~/csc245/Proj3[faircloth_as@cobra Proj3]$ myZip sample1
+File successfully compressed
+]0;faircloth_as@cobra:~/csc245/Proj3[faircloth_as@cobra Proj3]$ myUnzip sap[Kmple1.zip
+File successfully inflated back to original
+]0;faircloth_as@cobra:~/csc245/Proj3[faircloth_as@cobra Proj3]$ exit
+exit
+
+Script done on Wed 10 Nov 2021 08:42:22 PM EST

@@ -1,0 +1,31 @@
+Adrian Faircloth
+
+                        Project 1 Questions:
+1. The DList class has the following attributes:
+        NodeType<ItemType>* head
+        int length
+Structs are being used so the DList class is compatible with
+any data type or object.
+
+2.
+- isEmpty returns a bool indicating if the list is empty or not.
+- inList returns a bool indicating if an entered value is in the list or not.
+- makeEmpty deletes every node in the list and sets head to NULL.
+- insertHead adds an item to the list at the head.
+- appendTail adds an item to the list at the back.
+- print prints the info of each node in the list.
+- lengthIs returns the length of the list.
+- deleteItem deletes an item from the list as well as its location.
+- last returns a pointer to the last node in the list.
+- location returns a pointer to the node in the list with the item sent as a parameter.
+If there are no nodes with that parameter, returns NULL;
+- deleteLocation deletes the location sent as a parameter and links the adjacent nodes if necessary.
+
+3. The Move to the Front Algorithm moves the last item accessed to the front of the list, which
+is done so that recently accessed items can be accessed again more quickly.
+
+4. The client file mainly follows an algorithm that takes a char input from the user, sets it to
+uppercase, compares it with the possible options of the program, and runs the corresponding program.
+If the input does not match an option, the program prints an error message. This continues until
+the user inputs the char corresponding with the 'Quit' option of the program, at which point the 
+program exits.

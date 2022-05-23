@@ -1,0 +1,22 @@
+Adrian Faircloth
+12/10/21
+CSC245
+						Project 4 README
+
+Dijkstra's Algorithm is performed by choosing a starting vertex in a graph and checking all paths from that vertex,
+storing the distance and previous vertex if the path b/w the current and adjacent nodes is smaller than the stored distance. 
+Then, the unmarked vertex w/ the smallest distance is marked and the process is repeated while adding in the distance stored 
+in the current vertex. This is repeated until all nodes are marked, and the resulting table will hold the shortest paths to
+each vertex in the graph from the starting vertex. This program uses a struct to store the name, distance, mark, and previous vertex
+of the vertices used in the algorithm. This program also uses a Graph object to store the initial vertex data and a Queue to store
+the vertices adjacent to a given vertex. This program uses the following functions to perform Dijkstra's algorithm:
+
+buildGraph: builds graph from data stored in input file
+getStartingVertex: gets input for starting vertex for algorithm
+initializeTable: creates initial array of Dijkstra nodes, marking the starting node and setting its dist to 0
+getAdjacentVertices: stores all vertices adjacent to given vertex in a queue
+dijkstraAlgorithm: performs logic of Dijkstra's algorithm, setting a node's dist and previous node if it is unmarked
+			and has a longer stored distance than the current distance
+getSmallestNode: returns the unmarked node w/ the smallest stored dist. If no unmarked nodes exist, returns node w/ dist of INT_MAX
+findCycle: Checks graph for a cycle using a depth-first search
+printLine: Prints line of Dijkstra table with vertex name, distance, and previous vertex

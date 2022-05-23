@@ -1,0 +1,442 @@
+Script started on Wed 22 Sep 2021 09:00:48 PM EDT
+]0;faircloth_as@cobra:~/csc245/Proj1[?1034h[faircloth_as@cobra Proj1]$ cat MoveFront.cpp
+#include <iostream>
+#include "dlist.h"
+using namespace std;
+
+void PrintMenu(char&);
+void HeadInsert(DList<int>&);
+void TailInsert(DList<int>&);
+void FindAndMove(DList<int>&, int);
+void AccessItem(DList<int>&);
+void Delete(DList<int>&);
+void PrintList(const DList<int>&);
+void PrintLength(const DList<int>&);
+
+int main()
+{
+	DList<int> list;
+	char selection;
+	while(toupper(selection) != 'Q')
+	{
+		PrintMenu(selection);
+		
+		switch(toupper(selection))
+		{
+			case 'H': HeadInsert(list);  break;
+			case 'T': TailInsert(list);  break;
+			case 'A': AccessItem(list);  break;
+			case 'D': Delete(list);      break;
+			case 'P': PrintList(list);   break;
+			case 'L': PrintLength(list); break;
+			case 'Q': cout << "\tExiting Program..." << endl;  break;
+			default : cout << "\tError. Please Try Again." << endl;
+		}
+	}
+}
+
+
+
+void PrintMenu(char &selection)
+{
+	cout << "|**************************|" << endl;
+	cout << "|***********Menu***********|" << endl;
+	cout << "|**************************|" << endl;
+	cout << "|                          |" << endl;
+	cout << "| H: Insert item at front  |" << endl;
+	cout << "| T: Insert item at back   |" << endl;
+	cout << "| A: Access item in list   |" << endl;
+	cout << "| D: Delete item in list   |" << endl;
+	cout << "| P: Print list of items   |" << endl;
+	cout << "| L: Print length of list  |" << endl;
+	cout << "| Q: Quit Program          |" << endl;	
+	cout << "|                          |" << endl;
+	cout << "|**************************|" << endl;
+	cout << "|                          |" << endl;
+	cout << "|  Please enter a choice:  |" << endl;
+	cin >> selection;
+}
+
+void HeadInsert(DList<int> &list)
+{
+	int inVal;
+	cout << "\tWhat value would you like to insert?" << endl;
+	cin >> inVal;
+	if (list.inList(inVal) == true)
+		cout << "\tValue is already in list." << endl;
+	else
+	{
+		list.insertHead(inVal);
+		cout << "\tDone" << endl;
+	}
+}
+
+void TailInsert(DList<int> &list)
+{
+	int inVal;
+	cout << "\tWhat value would you like to insert?" << endl;
+	cin >> inVal;
+	if (list.inList(inVal) == true)
+		cout << "\tValue is already in list." << endl;
+	else
+	{
+		list.appendTail(inVal);
+		cout << "\tDone" << endl;
+	}	
+}
+
+void FindAndMove(DList<int> &list, int val)
+{
+	if(list.inList(val) == true)
+	{
+		list.deleteItem(val);
+		list.insertHead(val);	
+		cout <<"\tItem found and moved to front." << endl;
+	}
+	else
+		cout << "\tItem not found in list." << endl;
+}
+
+void AccessItem(DList<int> &list)
+{
+	int accVal;
+	if (list.isEmpty() == true)
+		cout << "\tList is empty. Values must be inserted before anything can be accessed." << endl;
+	else
+	{
+		cout << "\tWhat value would you like to access?" << endl;
+		cin >> accVal;
+		FindAndMove(list, accVal);	
+	}
+}
+
+void Delete(DList<int> &list)
+{
+	int delVal;
+	if (list.isEmpty() == true)
+		cout <<"\tList is empty. Values must be inserted before anyting can be deleted." << endl;
+	else
+	{
+		cout <<"\tWhat value would you like to delete?" << endl;
+		cin >> delVal;
+		if (list.inList(delVal) == true)
+		{
+			list.deleteItem(delVal);
+			cout << "\tItem deleted." << endl;
+		}
+		else
+			cout << "\tItem not found in list." << endl;
+	}
+}
+
+void PrintList(const DList<int> &list)
+{
+	if (list.isEmpty() == true)
+		cout <<"\tList is empty." << endl;
+	else
+	{
+		cout << "\tPrinting list..." << endl;
+		list.print();
+		cout << "\tEnd of list." << endl;
+	}
+}
+
+void PrintLength(const DList<int> &list)
+{
+	cout << "\tLength of list is " << list.lengthIs() << "." << endl;
+}
+]0;faircloth_as@cobra:~/csc245/Proj1[faircloth_as@cobra Proj1]$ cat dlist.h
+
+using namespace std;
+
+template <class ItemType>
+struct NodeType;
+
+template <class ItemType>
+class DList 
+{
+public :
+    DList ();		// Constructor
+    ~DList   ();  	// Destructor	
+
+    // Public Operations
+    void makeEmpty (); 
+    void deleteItem (ItemType item);
+    bool inList (ItemType item) const;	
+    bool isEmpty () const;  
+    void print() const; 
+    void insertHead (ItemType item); 
+    void appendTail (ItemType item); 
+    int lengthIs() const;
+
+private :
+    // Private Attributes of a DList Object 
+    NodeType<ItemType>* head;
+    int length;
+
+    // Functions Called Solely By Public Functions, Not The Client 
+    NodeType<ItemType>* location(ItemType item) const;
+    NodeType<ItemType>* last() const; 
+    void deleteLocation (NodeType<ItemType>* delPtr);
+};
+
+#include "dlist.cpp"
+]0;faircloth_as@cobra:~/csc245/Proj1[faircloth_as@cobra Proj1]$ cat dlist.cpp
+#include <cstddef> 
+#include <iostream>
+
+using namespace std;
+
+template<class ItemType>
+struct NodeType
+{
+	ItemType info;
+	NodeType<ItemType>*	next;
+	NodeType<ItemType>*	back;
+};
+
+template <class ItemType>		
+DList<ItemType>::DList()		// Class constructor
+{
+    length = 0;
+    head = NULL;
+}
+
+template <class ItemType>
+DList<ItemType>::~DList   ()		
+{
+	// Post: List is empty; All items have been deallocated.
+	makeEmpty();
+}
+
+template <class ItemType>
+void DList<ItemType>::makeEmpty()
+{
+    // Post: List is empty; all items have been deallocated.
+	NodeType<ItemType>* locdata = new NodeType<ItemType>;
+	locdata = head;
+	ItemType item;
+	while (locdata != NULL)
+	{
+		item = locdata -> info;
+		deleteItem(item);
+		locdata = locdata -> next;
+	}
+
+}
+
+template <class ItemType>
+void DList<ItemType>::deleteItem (ItemType item)	
+{
+	//  Pre :  item to be deleted is passed in via parameter 
+        // Post :  item is deleted if it exists in list 
+	NodeType<ItemType>* locdata = new NodeType<ItemType>;
+	locdata = location(item);	
+	deleteLocation(locdata);
+	locdata = NULL;
+}
+
+template <class ItemType>
+bool DList<ItemType>::inList (ItemType item) const
+{
+	//  Pre :  item to be located is passed in via parameter 
+        // Post :  function returns bool value if item is found 
+	NodeType<ItemType>* itemLoc = new NodeType<ItemType>;
+	itemLoc = location(item);
+	if (itemLoc != NULL)
+	{
+		itemLoc = NULL;
+		return true;
+	}
+	else
+	{
+		itemLoc = NULL;
+		return false;
+	}
+}
+
+template <class ItemType>
+bool DList<ItemType>::isEmpty() const		
+{
+	// Post : function returns true if list is empty, false otherwise
+	if (head == NULL)
+		return true;
+	else
+		return false;
+}
+
+template <class ItemType>
+void DList<ItemType>::print() const	
+{
+	// Pre  : List is not empty 
+	// Post : Items in List have been printed to screen
+
+ 	NodeType<ItemType>* locdata = new NodeType<ItemType>;
+	locdata = head;
+	int nodeCount = 1;
+	while (locdata != NULL)
+	{
+		cout << nodeCount << ":\t\t";
+		cout << locdata -> info << endl;
+		locdata = locdata -> next;
+		nodeCount++;
+	}
+	cout << endl;
+	locdata = NULL;
+
+}
+	
+template <class ItemType>
+void DList<ItemType>::insertHead(ItemType item)	
+{
+	//  Pre : item to be inserted is passed in via parameter
+        // Post : item is inserted at head of list;  Former first node is 
+        //        linked back to this new one via double link;
+        //        Length incremented;  Special case handled if list is empty 
+	NodeType<ItemType>* newNode = new NodeType<ItemType>;
+	newNode -> info = item;
+	newNode -> back = NULL;
+	if (isEmpty() == true)
+	{
+		newNode -> next = NULL;
+		head = newNode;
+	}
+	else
+	{
+		newNode -> next = head;
+		head -> back = newNode;
+		head = newNode;
+		
+	}
+	length++;
+	newNode = NULL;
+}
+
+template <class ItemType>
+void DList<ItemType>::appendTail(ItemType item)
+{
+	//  Pre :  item to be inserted is passed in via parameter
+        // Post :  item is added to tail of list; Former last node
+        //         is linked to this new one via double link 
+	NodeType<ItemType>* newNode = new NodeType<ItemType>;
+	newNode -> info = item;
+	newNode -> next = NULL;
+	if (isEmpty() == true)
+	{
+		newNode -> back = NULL;
+		head = newNode;
+	}
+	else
+	{
+		newNode -> back = last();
+		last() -> next = newNode;
+	}
+	length++;
+	newNode = NULL;
+}
+
+template <class ItemType>
+int DList<ItemType>::lengthIs() const	
+{
+	// Post : Function returns current length of list  
+	return length;
+}
+
+template <class ItemType>
+NodeType<ItemType>* DList<ItemType>::location(ItemType item) const	
+{
+	//  Pre : item to be located is passed in via parameter 
+        // Post : function returns address of item being searched for --
+        //        if not found, NULL is returned  
+	NodeType<ItemType>* itemloc = new NodeType<ItemType>;
+	itemloc = head;
+	bool inList = false;
+	for (int i = 0; i < length; i++)
+	{
+		if (itemloc -> info == item)
+		{
+			inList = true;
+		}
+		else
+			itemloc = itemloc -> next;
+	}
+	if (inList == true)
+		return itemloc;
+	else
+		return NULL;
+}
+
+template <class ItemType>
+NodeType<ItemType>* DList<ItemType>::last() const	
+{
+	// Post : Function returns location of current last item in list
+	NodeType<ItemType>* locdata = new NodeType<ItemType>;
+	locdata = head;
+	while (locdata -> next != NULL)
+	{
+		locdata = locdata -> next;
+	}
+
+	return locdata;
+
+}
+
+template <class ItemType>
+void DList<ItemType>::deleteLocation (NodeType<ItemType>* delPtr)	
+{
+
+	//  Pre : Item to be deleted exits in list and its location
+        //        is passed in via parameter
+                   
+	// Post : Location passed in is removed from list;  Length
+        //        is decremented, and location is deallocated 
+
+        // Special Cases Handled for Deleting Only One Item in List,
+        // The Head Item of List, and the Tail Item of List
+
+	if (delPtr -> next == NULL && delPtr -> back == NULL)
+	{
+		head = NULL;
+	}
+	else if (delPtr -> back == NULL)
+	{
+		head -> next -> back = NULL;
+		head = head -> next;
+	}
+	else if (delPtr -> next == NULL)
+	{
+		delPtr -> back -> next = NULL;
+	}
+	else if (delPtr -> next != NULL && delPtr -> back != NULL)
+	{	
+		delPtr -> next -> back = delPtr -> back;
+		delPtr -> back -> next = delPtr -> next;
+	}
+	delete delPtr;
+	delPtr = NULL;
+	length--;
+
+}
+]0;faircloth_as@cobra:~/csc245/Proj1[faircloth_as@cobra Proj1]$ c__[K[K++ MoveFront.cpp
+]0;faircloth_as@cobra:~/csc245/Proj1[faircloth_as@cobra Proj1]$ a.out
+|**************************|
+|***********Menu***********|
+|**************************|
+|                          |
+| H: Insert item at front  |
+| T: Insert item at back   |
+| A: Access item in list   |
+| D: Delete item in list   |
+| P: Print list of items   |
+| L: Print length of list  |
+| Q: Quit Program          |
+|                          |
+|**************************|
+|                          |
+|  Please enter a choice:  |
+Q
+	Exiting Program...
+]0;faircloth_as@cobra:~/csc245/Proj1[faircloth_as@cobra Proj1]$ exit
+exit
+
+Script done on Wed 22 Sep 2021 09:01:16 PM EDT

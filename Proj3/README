@@ -1,0 +1,30 @@
+Adrian Faircloth
+11/3/21
+CSC245
+					Project 3 README
+
+File compression is achieved by creating a Huffman Tree out of the characters in the file, using the
+resulting Huffman Table to correlate each character's ASCII value to a short binary value based
+on its path in the tree and replacing each character with its binary value in the table. This approach
+reduces the file size significantly, as each 8-byte character is compressed to a much smaller size. This
+is achieved using the Huffman Class, which contains the public methods insert, inTree, GetFrequency, build,
+GetCode, PrintTable, and NumNodes, as well as the private int numNodes, bool built, and vector nodes.
+To decompress a file, the program uses the Huffman table provided in the zip file to determine the 
+ASCII values corresponding to each binary value and then parses through the compressed binary string, 
+replacing each binary value with its corresponding character when a match is found.
+
+Example compression:
+Uncompressed file:
+MERCER SOCCER\n
+
+Zipped file:
+8
+10 1100
+32 1101
+67 00
+69 01
+77 1110
+79 1111
+82 101
+83 100
+1110011010001101110110011110000011011100

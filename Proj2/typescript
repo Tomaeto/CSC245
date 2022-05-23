@@ -1,0 +1,453 @@
+Script started on Wed 13 Oct 2021 01:54:22 PM EDT
+]0;faircloth_as@cobra:~/csc245/Proj2[?1034h[faircloth_as@cobra Proj2]$ cat testBet.cpp
+#include "bet.h"
+#include <iostream>
+#include <string>
+#include <stack>
+using namespace std;
+//Client file for Project 2 of CSC245
+//Tests functions of Binary Expression Tree program
+//Gets user input of an expression, prints expression in 
+//	prefix, infix, and postfix
+//Runs until user decides to quit
+//by Adrian Faircloth
+//10-11-2021
+
+//function declarations
+void printMenu(int&);
+void getExpression(string&);
+void exitConfirm(char&);
+void printExpressions(BET&);
+void makePostorder(string, BET&);
+void makePreorder(string, BET&);
+void convInfix(string&);
+int opLevel(char);
+bool isOperand(char);
+
+
+int main()
+{
+	BET bet;
+	int choice;
+	string line;
+	char exit;
+	//Running program until user chooses to quit
+	while (toupper(exit) != 'N')
+	{
+		printMenu(choice);
+		switch (choice)
+		{
+			case 1:
+			//If preorder is chosen, gets expression,
+			//	creates BET, prints expressions,
+			//	empties BET, and prompts user to exit
+				getExpression(line);
+				makePreorder(line, bet);
+				printExpressions(bet);
+				bet.makeEmpty();
+				exitConfirm(exit);
+				break;
+			case 2:
+			//If inorder is chosen, gets expression,
+			//	converts to postorder, creates BET,
+			//	prints expressions, empties BET, 
+			//	and prompts user to exit
+				getExpression(line);
+				convInfix(line);
+				makePostorder(line, bet);
+				printExpressions(bet);
+				bet.makeEmpty();
+				exitConfirm(exit);
+				break;
+			case 3:
+			//If postorder is chosen, gets expression,
+			//	creates BET, prints expressions,
+			//	empties BET, and prompts user to exit
+				getExpression(line);
+				makePostorder(line, bet);
+				printExpressions(bet);
+				bet.makeEmpty();
+				exitConfirm(exit);
+				break;
+			default:
+			//Error message
+				cout << "\tInvalid selection, please try again.\n" << endl;
+		}
+	}
+		//Exit message
+		cout << "\n\tDeconstructing tree and exiting program..." << endl;
+
+
+}
+
+void printMenu(int& choice)
+{
+	//Prints menu for program and gets user input for choice of expression type
+	cout << "\t&&&&&&&&&&& BINARY EXPRESSION TREE &&&&&&&&&&&" << endl;	
+	cout << "\t\t(1) Prefix\t(2) Infix\t(3) Postfix" << endl << endl;
+	cout << "\t Your Expression Type ---> ";
+	cin >> choice;
+}
+
+void getExpression(string& line)
+{
+	//Prompts user to input expression and gets input for expression
+	cout << "\t Your Expression ---> ";
+	cin.ignore();
+	getline(cin, line);
+}
+
+void exitConfirm(char& exit)
+{
+	//Asks user if they want to rerun program, gets input for user choice
+	cout << "\n\t Build another tree? (Y/N) "; 
+	cin >> exit;
+}
+
+void printExpressions(BET& bet)
+{
+	//If BET is empty, prints indicating message
+	//If not, prints BET as prefix, infix, and postfix expressions
+	if (bet.isEmpty() != true)
+	{
+		cout << "\t Prefix Expression of Tree: " << endl << "\t\t";
+		bet.preorder();
+		cout << "\n\t Infix Expression of Tree: " << endl << "\t\t";
+		bet.inorder();
+		cout << "\n\t Postfix Expression of Tree: " << endl << "\t\t";
+		bet.postorder();
+		cout << endl;
+	}
+
+	else 
+	{
+		cout << "\t Tree is empty. " << endl;
+	}
+	
+}
+
+void makePostorder(string inLine, BET& bet)
+{
+	//Creates BET from postfix expression
+	//From start of line, checks each char
+	//If it is operator, inserts into tree and relinks nodes as needed
+	//If it is operand, inserts into tree as a leaf node
+	for (int i = 0; i < inLine.size(); i++)
+	{
+		if (inLine[i] == '+' || inLine[i] == '-' || inLine[i] == '*' || inLine[i] == '/')
+			bet.insertPostfixOperator(inLine[i]);
+		else if (inLine[i] != ' ')
+			bet.insertOperand(inLine[i]);
+	}
+}
+
+void makePreorder(string inLine, BET& bet)
+{
+	//Creates BET from prefix expression
+	//From end of line, checks each char
+	//If it is operator, inserts into tree and relinks nodes as needed
+	//If it is operand, inserts into tree as leaf node
+	for (int i = inLine.size(); i >= 0; i--)
+	{
+		if (inLine[i] == '+' || inLine[i] == '-' || inLine[i] == '*' || inLine[i] == '/')
+			bet.insertPrefixOperator(inLine[i]);
+		else if (inLine[i] != ' ')
+			bet.insertOperand(inLine[i]);
+	}
+}
+
+void convInfix(string& inLine)
+{
+	//Converts infix expression to postfix
+	//Used to create BET from infix expression
+	string convLine = "";
+	stack<char> operators;
+	operators.push('(');
+	inLine += ')';	
+	for (int i = 0; i < inLine.size(); i++)
+	{
+		//If char is open parenthesis, push to stack
+		if (inLine[i] == '(')
+			operators.push('(');
+		//If char is operand, append to postfix expression
+		else if (isOperand(inLine[i]) == true)
+			convLine += inLine[i];
+		//If char is closed parenthesis, pop all operators
+		//	and add to postfix until open parenthesis
+		//	is found, then pop open parenthesis
+		else if (inLine[i] == ')')
+		{
+			while (operators.empty() == false && operators.top() != '(')
+			{
+				convLine += operators.top();
+				operators.pop();
+			}
+			operators.pop();
+		}
+		//If char is operator, pop and add to postfix all operators of
+		//	equal or higher precedence in stack, then push char to stack
+		else if (inLine[i] != ' ')
+		{
+			while (operators.empty() == false && opLevel(operators.top()) >= opLevel(inLine[i]))
+			{
+				convLine += operators.top();
+				operators.pop();
+				
+			}
+			operators.push(inLine[i]);
+		}
+			
+	}
+	inLine = convLine;
+}
+
+int opLevel(char op)
+{
+	//Returns value representing precedence of operator
+	//'+'  and '-' have lower precedence, 
+	//	'*' and '/' have higher precedence
+	//If char is not operator, returns 0
+	//Used for infix conversion to postfix
+	if (op == '+' || op == '-')
+		return 1;
+	if (op == '*' || op == '/')
+		return 2;
+	else 
+		return 0;
+}
+
+bool isOperand(char token)
+{
+	//Checks if a char is operand
+	//If token is an uppercase or lowercase letter
+	//	or a number, returns true
+	//Otherwise, returns false
+	//Used for infix conversion to postfix
+	if (token >= 'A' && token <= 'Z')
+		return true;
+	if (token >= 'a' && token <= 'z')
+		return true;
+	if (token >= '0' && token <= '9')
+		return true;
+	else
+		return false;
+}
+
+
+]0;faircloth_as@cobra:~/csc245/Proj2[faircloth_as@cobra Proj2]$ cat bet.cpp
+#include "bet.h"
+#include <cstddef>
+#include <iostream>
+//Implementation file for Binary Expression Tree program
+//Created for Project 2 of CSC245
+//by Adrian Faircloth
+//10-11-2021
+BET::BET()
+{
+	//Class constructor
+	root = NULL;
+}
+
+BET::~BET()
+{
+	//Class destructor
+	//Empties tree and deallocates all nodes
+	makeEmpty();
+}
+
+void BET::makeEmpty()
+{
+	//Public instance of makeEmpty, acts as call to private
+	//Empties tree, deallocates all nodes,
+	//	and clears Stack of any remaining symbols
+	makeEmpty(root);	
+	while (s.empty() !=  true)
+			s.pop();
+	
+}
+
+void BET::makeEmpty(BETPtr& t) const
+{
+	//Private instance of makeEmpty, accesses root node
+	//Empties tree and deallocates all nodes
+	if (t != NULL)
+	{
+		makeEmpty(t -> left);
+		makeEmpty(t -> right);
+		delete t;
+	}
+	t = NULL;
+}
+
+bool BET::isEmpty() const
+{
+	//Checks if tree is empty, returns
+	//	corresponding bool value
+	if (root == NULL)
+		return true;
+	else
+		return false;
+}
+
+void BET::insertPrefixOperator(char token)
+{
+	//Inserts an operator into the tree from prefix expression
+	//Sets info for node, pops last 2 nodes to set as children,
+	//	pushes node to stack and sets it as new root
+	BETPtr newNode = new BinaryNode;
+	newNode -> info.whichType = OPERATOR;
+	newNode -> info.theContent.opsymbol = token;
+	newNode -> left = s.top();
+	s.pop();
+	newNode -> right = s.top();
+	s.pop();
+	s.push(newNode);
+	root = s.top();
+}
+
+void BET::insertPostfixOperator(char token)
+{
+	//Inserts an operator into the tree from postfix expression
+	//Sets info for node, pops last 2 nodes to set as children,
+	//	pushes node to stack and sets it as new root
+	BETPtr newNode = new BinaryNode;
+	newNode -> info.whichType = OPERATOR;
+	newNode -> info.theContent.opsymbol = token;
+	newNode -> right = s.top();
+	s.pop();
+	newNode -> left = s.top();
+	s.pop();
+	s.push(newNode);
+	root = s.top();
+}
+
+void BET::insertOperand(char token)
+{
+	//Inserts operand into stack
+	//Since all operands are leaf nodes, sets links to NULL
+	BETPtr newNode = new BinaryNode;
+	newNode -> info.whichType = OPERAND;
+	newNode -> info.theContent.variable = token;
+	newNode -> left = NULL;
+	newNode -> right = NULL;
+	s.push(newNode);
+	root = s.top();
+}
+
+void BET::preorder() const
+{
+	//Public instance of preorder(), acts as call to private
+	preorder(root);
+}
+
+void BET::preorder(BETPtr t) const
+{
+	//Private instance of preorder(), accesses root
+	//Prints tree in prefix expression
+	//Prints root node, then traverses left subtree,
+	//	then traverses right subtree
+	if (t != NULL)
+	{
+		if (t -> info.whichType == OPERATOR)
+			cout << t -> info.theContent.opsymbol << " ";
+		else if (t -> info.whichType == OPERAND)
+			cout << t -> info.theContent.variable << " ";
+		preorder(t -> left);
+		preorder(t -> right);
+	}
+	
+}
+
+void BET::inorder() const
+{
+	//Public instance of inorder(), acts as call to private
+	inorder(root);
+}
+
+void BET::inorder(BETPtr t) const
+{
+	//Private instance of inorder(), accesses root
+	//Prints tree in infix expression
+	//Adds parenthesis into expression as needed
+	if (t != NULL)
+	{
+		//Since all leaf nodes are operands, prints
+		//	variable content of leaf nodes
+		if (t -> left == NULL && t-> right == NULL)
+		{
+			cout << t -> info.theContent.variable << " ";
+		}
+		else
+		{
+			//If a node is not a leaf, prints '(', prints
+			//	left subtree, prints symbol of node,
+			//	prints right subtree, and prints ')'
+			cout << "( ";
+			inorder(t -> left);
+			cout << t -> info.theContent.opsymbol << " ";
+			inorder(t -> right);
+			cout << ") ";
+		}
+	}
+}
+
+void BET::postorder() const
+{
+	//Public instance of postorder(), acts as call to private
+	postorder(root);
+}
+
+void BET::postorder(BETPtr t) const
+{
+	//Private instance of postorder(), accesses root
+	//Prints tree in postfix expression
+	//Traverses left subtree, then traverses right subtree,
+	//	then prints root node
+	if (t != NULL)
+	{
+		postorder(t -> left);
+		postorder(t -> right);
+		
+		if (t -> info.whichType == OPERATOR)
+			cout << t -> info.theContent.opsymbol << " ";
+		else if (t -> info.whichType == OPERAND)
+			cout << t -> info.theContent.variable << " ";
+	}
+	
+}
+
+
+]0;faircloth_as@cobra:~/csc245/Proj2[faircloth_as@cobra Proj2]$ c++ testBet.cpp bet.o
+]0;faircloth_as@cobra:~/csc245/Proj2[faircloth_as@cobra Proj2]$ a.out
+	&&&&&&&&&&& BINARY EXPRESSION TREE &&&&&&&&&&&
+		(1) Prefix	(2) Infix	(3) Postfix
+
+	 Your Expression Type ---> 3
+	 Your Expression ---> 9 8 +
+	 Prefix Expression of Tree: 
+		+ 9 8 
+	 Infix Expression of Tree: 
+		( 9 + 8 ) 
+	 Postfix Expression of Tree: 
+		9 8 + 
+
+	 Build another tree? (Y/N) Y
+	&&&&&&&&&&& BINARY EXPRESSION TREE &&&&&&&&&&&
+		(1) Prefix	(2) Infix	(3) Postfix
+
+	 Your Expression Type ---> 2
+	 Your Expression ---> (8 * +9  9  9) * 5
+	 Prefix Expression of Tree: 
+		* + 8 9 5 
+	 Infix Expression of Tree: 
+		( ( 8 + 9 ) * 5 ) 
+	 Postfix Expression of Tree: 
+		8 9 + 5 * 
+
+	 Build another tree? (Y/N) N
+
+	Deconstructing tree and exiting program...
+]0;faircloth_as@cobra:~/csc245/Proj2[faircloth_as@cobra Proj2]$ exit
+exit
+
+Script done on Wed 13 Oct 2021 01:55:14 PM EDT

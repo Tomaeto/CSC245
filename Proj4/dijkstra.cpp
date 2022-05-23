@@ -1,0 +1,356 @@
+#include "graph.h"
+#include "HashTable.h"
+#include <queue>
+#include <stack>
+#include <iostream>
+#include <fstream>
+#include <climits>
+#include <vector>
+#include <algorithm>
+using namespace std;
+//Program for performing Dijkstra's algorithm on given graph
+//Gets command line input for file w/ vertex data and user input for starting vertex
+//Performs Dijkstra's algorithm from given starting vertex, prints table and checks for cycle in graph
+//By Adrian Faircloth
+//12-10-21
+
+
+//struct for node of Dijkstra table
+struct DNode
+{
+	string name = "";
+	bool mark = false;
+	int dist = INT_MAX;
+	string prev = "";
+	bool visited = false;
+};
+
+//Function declarations
+void buildGraph(Graph<string>&, string, int&, HashTable<string>&, vector<string>&);
+string getStartingVertex(HashTable<string>&);
+void printMenu(vector<string>&);
+void initializeTable(DNode (&nodes)[], vector<string>&, string);
+void getAdjacentVertices(DNode&, Queue<string>&, Graph<string>&);
+void dijkstraAlgorithm(DNode (&nodes)[], Graph<string>&, string, int);
+DNode getSmallestNode(DNode (&nodes)[], int);
+void printLine(DNode);
+bool findCycle(Graph<string>&, string);
+
+int main(int argc, char *argv[]) 
+{
+	//Getting filename from command line
+	string filename = argv[1];
+	string line;
+
+	//Declaring graph and vector of vertex names
+	Graph<string> myGraph(50);
+	vector<string> names;
+
+	//Opening file
+	ifstream file(filename);
+	
+	//If filename is invalid, print error message and exit
+	if (!file.is_open())
+		cout << "Invalid filename" << endl;
+
+	//If filename is valid, build graph and perform Dijkstra's algorithm
+	else
+	{
+		HashTable<string> vertices("ZZZ", 50);
+		int numVertices = 0;
+
+		//Building graph with data on each line of input file and counting vertices
+		while (getline(file, line))
+		{
+			buildGraph(myGraph, line, numVertices, vertices, names);
+		}
+
+		//Creating array of Dijkstra nodes of size numVertices to act as Dijkstra table
+		DNode nodes[numVertices];
+
+		//Sorting vector of vertex names and printing start menu
+		sort(names.begin(), names.end());
+		printMenu(names);		
+
+		//Getting user input for starting vertex for Dijkstra's algorithm
+		string startVertex = getStartingVertex(vertices);		
+
+		//Printing delimiter b/w user input and Dijkstra table & printing first line of table	
+		cout << "\t--------------------------------------------------------" << endl;
+		cout << "\tVertex\t\tDistance\t\tPrevious" << endl;
+
+		//Initializing Dijkstra table w/ given starting vertex	
+		initializeTable(nodes, names, startVertex);
+
+		//Performing Dijkstra's algorithm for given starting vertex and printing table
+		dijkstraAlgorithm(nodes, myGraph, startVertex, numVertices);		
+
+		//Printing delimiter b/w Dijkstra table and cycle message
+		cout <<"\t--------------------------------------------------------" << endl;
+
+		//Checking graph for cycle and printing corresponding message
+		bool cycle = findCycle(myGraph, startVertex);
+		if (!cycle)
+			cout << "\t\t\tThe graph does not contain a cycle" << endl;
+		else
+			cout << "\t\t\tThe graph contains a cycle" << endl;
+	}
+}
+
+//Function for adding vertices and edges to graph
+void buildGraph(Graph<string>& myGraph, string line, int& numVertices, HashTable<string>& vertices, vector<string>& names) 
+{
+	//Precondition: graph, line from file, hash table, and counter for vertices passed in
+	//Postcondition: Adds vertices to graph if needed, adds weighted edge b/w vertices, 
+	//	and counts number of vertices
+	string v1, v2;
+	int dist;
+	//Parsing input line to get origin vertex, destination vertex, and weight of edge
+	v1 = line.substr(0, line.find(';'));
+	v2 = line.substr(line.find(';') + 1, line.find(';', line.find(';') + 1) - line.find(';') - 1);
+	dist = stoi(line.substr(line.rfind(';') + 1, line.back()));	
+
+	//If either vertex is not in the graph, add it to both the graph and hash table of vertex names
+	if  (vertices.find(v1) != v1) 
+	{
+		myGraph.AddVertex(v1);
+		vertices.insert(v1);
+		numVertices++;	
+		names.push_back(v1);
+	}
+	if  (vertices.find(v2) != v2) 
+	{
+		myGraph.AddVertex(v2);
+		vertices.insert(v2);
+		numVertices++;
+		names.push_back(v2);
+	}
+
+	//Adding weighted edge b/w origin and destination vertices
+	myGraph.AddEdge(v1, v2, dist);	
+}
+
+//Function for getting user input for starting vertex of Dijkstra's algorithm
+string getStartingVertex(HashTable<string>& vertices)
+{
+
+	//Precondition: hash table of vertices passed in
+	//Postcondition: Returns string with name of valid starting vertex
+	
+	//Getting initial user input
+	string input = "";
+	cout << "\tEnter starting vertex: ";
+	cin >> input;
+
+	//While input vertex is not found in hash table, print error message and prompt
+	//	for another input
+	while (vertices.find(input) != input)
+	{
+		cout << "\tInvalid starting vertex..." << endl;
+		cout << "\tEnter starting vertex: ";
+		cin >> input;
+	}
+
+	//Returning valid input
+	return input;
+}
+
+//Function for printing start menu with all vertex names
+void printMenu(vector<string>& names)
+{
+	//Precondition: vector of names passed in	
+	//Postcondition: All vertex names printed w/ 3 names per line
+
+	//Creating temp vector and counter for names printed per line
+	vector<string> tempNames = names;
+	int inLine = 0;
+
+	//Clearing screen and printing message w/ number of vertices in graph
+	cout << "\033[2J\033[1;1H";
+	cout << "\t^^^^^^^^^^^^^^^    DIJKSTRA'S ALGORITHM    ^^^^^^^^^^^^^^^" << endl;
+	cout << "\tA weighted graph has been built for these " << tempNames.size() << " cities:" << endl;
+
+	while (!tempNames.empty())
+	{
+		//Printing out front name in vector and deleting name
+		cout << "        " << tempNames.front();
+		tempNames.erase(tempNames.begin());
+		inLine++;
+
+		//Once three names have been printed, go to next line and reset counter
+		if (inLine == 3)
+		{
+			cout << endl;
+			inLine = 0;
+		}
+	}
+	cout << endl << endl;
+}
+
+//Function for initializing array of Dijkstra nodes w/ names and starting vertex values
+void initializeTable(DNode (&nodes)[], vector<string>& names, string startVertex)
+{
+	//Precondition: Array of Dijkstra nodes, vector of vertex names, and starting vertex passed in
+	//Postcondition: All nodes in array are given name, starting vertex values set
+
+	for (int i = 0; i < names.size(); i++)
+	{
+		nodes[i].name = names.at(i);
+
+		//If node is starting vertex, mark node, set dist to 0, and set prev as N/A
+		if (nodes[i].name == startVertex)
+		{
+			nodes[i].mark = true;
+			nodes[i].dist = 0;
+			nodes[i].prev = "N/A";
+		} 
+	}
+}
+
+//Function for getting vertices adjacent to given vertex
+void getAdjacentVertices(DNode& currNode, Queue<string>& adjVert, Graph<string>& vertices)
+{
+	//Precondition: Dijkstra node, queue of vertices, and graph passed in
+	//Postcondition: Queue holds vertices adjacent to given Dijkstra node
+
+	vertices.GetToVertices(currNode.name, adjVert);
+}
+
+void dijkstraAlgorithm(DNode (&nodes)[], Graph<string>& vertices, string startVertex, int numVertices)
+{
+
+	Queue<string> adjVert(50);
+	DNode currNode;
+	string adjNode;
+	int dist = currNode.dist;
+
+	for (int i = 0; i < numVertices; i++)
+	{
+		if (nodes[i].name == startVertex)
+			currNode = nodes[i];
+	}
+
+	//Performing Dijkstra's algorithm while there are unmarked nodes
+	//getSmallestVertex function returns node w/ dist of INT_MAX when no unmarked nodes are found
+	while (currNode.dist != INT_MAX)
+	{
+
+		//Getting all vertices adjacent to current node
+		getAdjacentVertices(currNode, adjVert, vertices);
+
+		//Storing dist of current node
+		dist = currNode.dist;		
+
+		//Checking all adjacent vertices for mark and dist
+		while (!adjVert.isEmpty())
+		{
+			//Getting name of node from queue and checking all nodes to find matching node
+			adjNode = adjVert.getFront();
+			for (int i = 0; i < numVertices; i++)
+			{
+				if (nodes[i].name == adjNode)
+				{
+					//After finding matching node, add weight of edge b/w nodes to dist
+					dist += vertices.WeightIs(currNode.name, adjNode);
+	
+					//If node is unmarked and stored dist is greater than current dist,
+					//	set dist and prev of node
+					if (nodes[i].mark == false && nodes[i].dist > dist)
+					{
+						nodes[i].dist = dist;
+						nodes[i].prev = currNode.name;
+					}
+	
+					//Resetting dist to dist stored in current node
+					dist = currNode.dist;
+				}
+			}
+			adjVert.dequeue();	
+		}
+		printLine(currNode);
+		//Getting next node to perform Dijkstra's algorithm on
+		currNode = getSmallestNode(nodes, numVertices);
+		
+	}
+	
+}
+
+//Function for finding smallest unmarked vertex in array
+DNode getSmallestNode(DNode (&nodes)[], int numVertices)
+{
+
+	//Precondition: array of Dijkstra nodes and number of vertices passed in
+	//Postcondition: Returns unmarked node w/ smallest dist
+	//If no unmarked nodes are found, returns node w/ dist of INT_MAX		
+	DNode smallNode;
+	int vertID = numVertices + 1;
+
+	//If a node in the array is unmarked and has a smaller dist than current smallest node,
+	//	set that node to the smallest node and store index of node
+	for (int i = 0; i < numVertices; i++)
+	{
+		if (nodes[i].mark == false && nodes[i].dist < smallNode.dist)
+		{	
+			smallNode = nodes[i];
+			vertID = i;
+		}
+	}
+
+	//If index of smallest node is in range, mark node	
+	if (vertID < numVertices)
+	{
+		nodes[vertID].mark = true;
+	}
+
+	//Returning smallest found node
+	return smallNode;	
+}
+
+//Function for printing data of given Dijkstra node
+void printLine(DNode node)
+{
+	//Precondition: Node to print passed in
+	//Postcondition: Prints node's name, dist, and prev node
+	cout << "\t" <<  node.name << "\t\t" << node.dist << "\t\t" << node.prev << endl; 
+}
+
+//Function for checking graph for a cycle
+bool findCycle(Graph<string>& vertices, string startVertex)
+{
+	//Precondition: Graph and starting vertex passed in
+	//Postcondition: Returns boolean corresponding to presence of cycle in graph
+
+	//Initializing bool, stack for storing path, queue for adj. vertices, and string vertices	
+	bool found = false;
+	stack<string> path;
+	Queue<string> adjVert(50);
+	path.push(startVertex);
+	string topVertex;
+	string endVertex = startVertex;
+
+	//Performing a depth-first search to check for cycle in graph
+	while (!path.empty() && !found)
+	{
+		topVertex = path.top();
+		path.pop();
+
+		if (topVertex == endVertex)
+			found = true;
+
+		else if (!vertices.IsMarked(topVertex))
+		{
+			vertices.MarkVertex(topVertex);
+			vertices.GetToVertices(topVertex, adjVert);
+
+			while (!adjVert.isEmpty())
+			{
+				if (!vertices.IsMarked(adjVert.getFront()))
+					path.push(adjVert.getFront());
+
+				adjVert.dequeue();
+			}
+		}
+	}
+
+	return found;
+}
